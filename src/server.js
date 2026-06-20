@@ -73,14 +73,43 @@ if (process.env.SEED_SECRET) {
     const path = require('path');
     res.setHeader('Content-Type', 'text/plain');
     res.write('Seeding database...\n');
-    const child = execFile('node', [path.join(__dirname, 'seed.js')], { env: process.env }, (err, stdout, stderr) => {
-      if (err) {
-        res.write('ERROR:\n' + (stderr || err.message));
-      } else {
-        res.write(stdout);
-      }
+    execFile('node', [path.join(__dirname, 'seed.js')], { env: process.env }, (err, stdout, stderr) => {
+      if (err) { res.write('ERROR:\n' + (stderr || err.message)); }
+      else { res.write(stdout); }
       res.end();
     });
+  });
+
+  // Cleanup endpoint — removes all non-admin users, bookings, and notifications
+  // Airports, airlines, and flights are preserved
+  app.get('/api/cleanup', async (req, res) => {
+    if (req.query.secret !== process.env.SEED_SECRET) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    try {
+      const mongoose = require('mongoose');
+      const User = require('./models/User');
+      const Booking = require('./models/Booking');
+      const Notification = require('./models/Notification');
+
+      const [users, bookings, notifications] = await Promise.all([
+        User.deleteMany({ role: { $ne: 'admin' } }),
+        Booking.deleteMany({}),
+        Notification.deleteMany({}),
+      ]);
+
+      res.json({
+        success: true,
+        message: 'Cleanup complete. Admin user, airports, airlines, and flights preserved.',
+        deleted: {
+          users: users.deletedCount,
+          bookings: bookings.deletedCount,
+          notifications: notifications.deletedCount,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   });
 }
 
