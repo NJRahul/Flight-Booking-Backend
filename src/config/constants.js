@@ -1,0 +1,45 @@
+module.exports = {
+  BOOKING_STATUSES: {
+    PENDING: 'pending',
+    CONFIRMED: 'confirmed',
+    CANCELLED: 'cancelled',
+    COMPLETED: 'completed',
+  },
+  FLIGHT_STATUSES: {
+    SCHEDULED: 'scheduled',
+    DELAYED: 'delayed',
+    CANCELLED: 'cancelled',
+    BOARDING: 'boarding',
+    DEPARTED: 'departed',
+    LANDED: 'landed',
+  },
+  SEAT_CLASSES: {
+    ECONOMY: 'economy',
+    BUSINESS: 'business',
+    FIRST: 'first',
+  },
+  PASSENGER_TYPES: {
+    ADULT: 'adult',
+    CHILD: 'child',
+    INFANT: 'infant',
+  },
+  PAYMENT_METHODS: {
+    CARD: 'card',
+    UPI: 'upi',
+    NETBANKING: 'netbanking',
+    WALLET: 'wallet',
+  },
+  NOTIFICATION_TYPES: {
+    BOOKING_CONFIRMED: 'booking_confirmed',
+    FLIGHT_DELAYED: 'flight_delayed',
+    FLIGHT_CANCELLED: 'flight_cancelled',
+    CHECK_IN_REMINDER: 'check_in_reminder',
+    PAYMENT_SUCCESS: 'payment_success',
+    BOOKING_CANCELLED: 'booking_cancelled',
+  },
+  TAX_RATE: 0.18,
+  FUEL_SURCHARGE_RATE: 0.05,
+  CANCELLATION_CHARGE_RATE: 0.10,
+  INFANT_PRICE_MULTIPLIER: 0.1,
+  CHILD_PRICE_MULTIPLIER: 0.75,
+};
