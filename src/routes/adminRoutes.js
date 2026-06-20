@@ -2,11 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const { admin } = require('../middleware/admin');
-const { generalLimiter } = require('../middleware/rateLimiter');
 const ctrl = require('../controllers/adminController');
 
 // All admin routes require authentication + admin role
-router.use(protect, admin, generalLimiter);
+router.use(protect, admin);
 
 // ── Dashboard ─────────────────────────────────
 router.get('/stats', ctrl.getStats);

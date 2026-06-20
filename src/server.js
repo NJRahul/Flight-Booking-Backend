@@ -15,6 +15,9 @@ const logger = require('./utils/logger');
 const app = express();
 const server = http.createServer(app);
 
+// Trust Render's reverse proxy so req.ip is the real client IP (fixes rate-limiter shared-counter bug)
+app.set('trust proxy', 1);
+
 connectDB();
 
 const io = initSocket(server);
