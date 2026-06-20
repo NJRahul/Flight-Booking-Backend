@@ -10,6 +10,7 @@ const { success, error } = require('../utils/apiResponse');
 const { generateTransactionId } = require('../utils/generateReference');
 const logger = require('../utils/logger');
 const { sendBookingConfirmationEmail } = require('../services/emailService');
+const { emitAdminStatsUpdate } = require('../config/socket');
 
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.body;
@@ -298,6 +299,7 @@ const confirmDemoPayment = asyncHandler(async (req, res, next) => {
       type: 'payment_success',
       message: 'Payment confirmed! Booking is now confirmed.',
     });
+    emitAdminStatsUpdate(io, { event: 'payment:confirmed', bookingId: booking._id });
   }
 
   await booking.populate({

@@ -7,6 +7,7 @@ const { generateBookingRef } = require('../utils/generateReference');
 const logger = require('../utils/logger');
 const { sendBookingConfirmationEmail, sendCancellationEmail } = require('../services/emailService');
 const pdfService = require('../services/pdfService');
+const { emitAdminStatsUpdate } = require('../config/socket');
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const TAX_RATE = 0.18;
@@ -196,6 +197,10 @@ const createBooking = asyncHandler(async (req, res, next) => {
 
   logger.info(`Booking created: ${bookingRef} by user ${req.user._id}`);
 
+  // Notify admin sockets that stats have changed
+  const io = req.app.get('io');
+  if (io) emitAdminStatsUpdate(io, { event: 'booking:new', bookingId: booking._id });
+
   return success(res, 201, { booking, clientSecret });
 });
 
@@ -344,6 +349,7 @@ const cancelBooking = asyncHandler(async (req, res, next) => {
       bookingId: booking._id,
       refundAmount,
     });
+    emitAdminStatsUpdate(io, { event: 'booking:cancelled', bookingId: booking._id });
   }
 
   logger.info(

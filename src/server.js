@@ -51,6 +51,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/airports', require('./routes/airportRoutes'));
+app.use('/api/saved-searches', require('./routes/savedSearchRoutes'));
 
 app.get('/api/health', (req, res) => {
   res.json({
