@@ -62,6 +62,28 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// One-time seed endpoint — protected by SEED_SECRET env var
+// Remove SEED_SECRET from Render env vars after seeding to disable this
+if (process.env.SEED_SECRET) {
+  app.get('/api/seed', (req, res) => {
+    if (req.query.secret !== process.env.SEED_SECRET) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { execFile } = require('child_process');
+    const path = require('path');
+    res.setHeader('Content-Type', 'text/plain');
+    res.write('Seeding database...\n');
+    const child = execFile('node', [path.join(__dirname, 'seed.js')], { env: process.env }, (err, stdout, stderr) => {
+      if (err) {
+        res.write('ERROR:\n' + (stderr || err.message));
+      } else {
+        res.write(stdout);
+      }
+      res.end();
+    });
+  });
+}
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
