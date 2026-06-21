@@ -106,11 +106,11 @@ const getPopularRoutes = asyncHandler(async (req, res) => {
   const routes = await Booking.aggregate([
     { $match: { status: { $in: ['confirmed', 'completed'] } } },
     { $lookup: { from: 'flights', localField: 'flight', foreignField: '_id', as: 'flightData' } },
-    { $unwind: { path: '$flightData', preserveNullAndEmpty: false } },
+    { $unwind: { path: '$flightData', preserveNullAndEmptyArrays: false } },
     { $lookup: { from: 'airports', localField: 'flightData.origin', foreignField: '_id', as: 'originAirport' } },
     { $lookup: { from: 'airports', localField: 'flightData.destination', foreignField: '_id', as: 'destAirport' } },
-    { $unwind: { path: '$originAirport', preserveNullAndEmpty: false } },
-    { $unwind: { path: '$destAirport', preserveNullAndEmpty: false } },
+    { $unwind: { path: '$originAirport', preserveNullAndEmptyArrays: false } },
+    { $unwind: { path: '$destAirport', preserveNullAndEmptyArrays: false } },
     {
       $group: {
         _id: { origin: '$flightData.origin', dest: '$flightData.destination' },
@@ -716,9 +716,9 @@ const getReports = asyncHandler(async (req, res) => {
     Booking.aggregate([
       { $match: { createdAt: { $gte: startDate, $lte: endDate }, 'payment.status': 'completed' } },
       { $lookup: { from: 'flights', localField: 'flight', foreignField: '_id', as: 'fl' } },
-      { $unwind: { path: '$fl', preserveNullAndEmpty: false } },
+      { $unwind: { path: '$fl', preserveNullAndEmptyArrays: false } },
       { $lookup: { from: 'airlines', localField: 'fl.airline', foreignField: '_id', as: 'al' } },
-      { $unwind: { path: '$al', preserveNullAndEmpty: false } },
+      { $unwind: { path: '$al', preserveNullAndEmptyArrays: false } },
       {
         $group: {
           _id: '$al.name',
@@ -747,7 +747,7 @@ const getReports = asyncHandler(async (req, res) => {
       { $sort: { count: -1 } },
       { $limit: 10 },
       { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
-      { $unwind: { path: '$user', preserveNullAndEmpty: false } },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: false } },
       { $project: { name: '$user.name', email: '$user.email', count: 1, spent: 1 } },
     ]),
     // Refunds by day
