@@ -80,6 +80,18 @@ const createBooking = asyncHandler(async (req, res, next) => {
     return error(res, 400, 'Insufficient seats available for the selected class');
   }
 
+  // Validate return flight when round-trip
+  let returnFlightData = null;
+  if (tripType === 'round-trip' && returnFlightId) {
+    returnFlightData = await Flight.findById(returnFlightId);
+    if (!returnFlightData) return error(res, 404, 'Return flight not found');
+    if (!returnFlightData.isActive) return error(res, 400, 'Return flight is not available for booking');
+    if (!returnFlightData.seats[seatClass]) return error(res, 400, 'Invalid seat class for return flight');
+    if (returnFlightData.seats[seatClass].available < paxCount) {
+      return error(res, 400, 'Insufficient seats available on return flight');
+    }
+  }
+
   // Validate each passenger has name fields
   for (let i = 0; i < passengers.length; i++) {
     const pax = passengers[i];
@@ -95,11 +107,14 @@ const createBooking = asyncHandler(async (req, res, next) => {
 
   // ── Pricing calculation ────────────────────────────────────────────────────
   const baseFare = classData.price;
+  const returnBaseFare = returnFlightData ? (returnFlightData.seats[seatClass]?.price || 0) : 0;
 
   const perPassengerFares = passengers.map((p) => {
-    if (p.type === 'adult') return baseFare;
-    if (p.type === 'child') return Math.round(baseFare * 0.75);
-    return Math.round(baseFare * 0.1); // infant
+    const outFare = p.type === 'adult' ? baseFare : p.type === 'child' ? Math.round(baseFare * 0.75) : Math.round(baseFare * 0.1);
+    const retFare = returnBaseFare > 0
+      ? (p.type === 'adult' ? returnBaseFare : p.type === 'child' ? Math.round(returnBaseFare * 0.75) : Math.round(returnBaseFare * 0.1))
+      : 0;
+    return outFare + retFare;
   });
 
   const baseTotal = perPassengerFares.reduce((sum, f) => sum + f, 0);
@@ -220,6 +235,14 @@ const getUserBookings = asyncHandler(async (req, res, next) => {
         { path: 'destination', select: 'code city name' },
       ],
     })
+    .populate({
+      path: 'returnFlight',
+      select: 'flightNumber departureTime arrivalTime origin destination duration',
+      populate: [
+        { path: 'origin', select: 'code city' },
+        { path: 'destination', select: 'code city' },
+      ],
+    })
     .sort('-createdAt')
     .skip((page - 1) * limit)
     .limit(Number(limit))
@@ -241,6 +264,10 @@ const getBookingById = asyncHandler(async (req, res, next) => {
   const booking = await Booking.findById(req.params.id)
     .populate({
       path: 'flight',
+      populate: [{ path: 'airline' }, { path: 'origin' }, { path: 'destination' }],
+    })
+    .populate({
+      path: 'returnFlight',
       populate: [{ path: 'airline' }, { path: 'origin' }, { path: 'destination' }],
     })
     .populate('user', 'name email');
