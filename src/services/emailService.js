@@ -174,11 +174,11 @@ const sendBookingConfirmationEmail = async (booking, user) => {
       </tr>
       <tr>
         <td style="padding:12px;color:#64748b;font-size:13px;">Class</td>
-        <td style="padding:12px;color:#0f172a;font-size:13px;font-weight:500;text-transform:capitalize;">${booking.seatClass || 'Economy'}</td>
+        <td style="padding:12px;color:#0f172a;font-size:13px;font-weight:500;text-transform:capitalize;">${booking.class || 'Economy'}</td>
       </tr>
       <tr style="background:#f8fafc;">
         <td style="padding:12px;color:#64748b;font-size:13px;">Total Paid</td>
-        <td style="padding:12px;color:#0f172a;font-size:15px;font-weight:700;">₹${(booking.totalAmount || 0).toLocaleString('en-IN')}</td>
+        <td style="padding:12px;color:#0f172a;font-size:15px;font-weight:700;">₹${(booking.pricing?.totalAmount || 0).toLocaleString('en-IN')}</td>
       </tr>
     </table>
     ${passengerRows ? `
@@ -197,8 +197,14 @@ const sendBookingConfirmationEmail = async (booking, user) => {
     </div>
     ${ctaButton('View Booking', `${process.env.FRONTEND_URL || 'http://localhost:5173'}/bookings/${booking._id}`)}`;
 
+  const recipients = [user.email];
+  const contactEmail = booking.contactInfo?.email;
+  if (contactEmail && contactEmail.toLowerCase() !== user.email.toLowerCase()) {
+    recipients.push(contactEmail);
+  }
+
   return sendEmail({
-    to: user.email,
+    to: recipients.join(', '),
     subject: `Booking Confirmed! ${booking.bookingReference} — ${from} to ${to}`,
     html: baseLayout(content),
   });

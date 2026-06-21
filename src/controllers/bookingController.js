@@ -5,7 +5,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { success, error } = require('../utils/apiResponse');
 const { generateBookingRef } = require('../utils/generateReference');
 const logger = require('../utils/logger');
-const { sendBookingConfirmationEmail, sendCancellationEmail } = require('../services/emailService');
+const { sendCancellationEmail } = require('../services/emailService');
 const pdfService = require('../services/pdfService');
 const { emitAdminStatsUpdate } = require('../config/socket');
 
@@ -181,8 +181,6 @@ const createBooking = asyncHandler(async (req, res, next) => {
   await booking.save();
 
   // Fire-and-forget side effects
-  sendBookingConfirmationEmail(booking, req.user).catch(() => {});
-
   Notification.createForUser(
     req.user._id,
     'booking_confirmed',

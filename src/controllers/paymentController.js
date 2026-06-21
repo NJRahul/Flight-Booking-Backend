@@ -10,6 +10,7 @@ const { success, error } = require('../utils/apiResponse');
 const { generateTransactionId } = require('../utils/generateReference');
 const logger = require('../utils/logger');
 const { sendBookingConfirmationEmail } = require('../services/emailService');
+const { sendBookingConfirmationSms } = require('../services/smsService');
 const { emitAdminStatsUpdate } = require('../config/socket');
 
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
@@ -97,8 +98,6 @@ const confirmPayment = asyncHandler(async (req, res, next) => {
   booking.status = 'confirmed';
   await booking.save();
 
-  // Fire-and-forget
-  sendBookingConfirmationEmail(booking, req.user).catch(() => {});
   Notification.createForUser(
     req.user._id,
     'payment_success',
@@ -125,6 +124,9 @@ const confirmPayment = asyncHandler(async (req, res, next) => {
     path: 'flight',
     populate: [{ path: 'airline' }, { path: 'origin' }, { path: 'destination' }],
   });
+
+  sendBookingConfirmationEmail(booking, req.user).catch(err => logger.error('Confirmation email failed:', err.message));
+  sendBookingConfirmationSms(booking, req.user).catch(err => logger.error('Confirmation SMS failed:', err.message));
 
   return success(res, 200, { booking, message: 'Booking confirmed!' });
 });
@@ -163,7 +165,12 @@ const handleWebhook = async (req, res) => {
         booking.status = 'confirmed';
         await booking.save();
         if (booking.user) {
-          sendBookingConfirmationEmail(booking, booking.user).catch(() => {});
+          await booking.populate({
+            path: 'flight',
+            populate: [{ path: 'airline' }, { path: 'origin' }, { path: 'destination' }],
+          });
+          sendBookingConfirmationEmail(booking, booking.user).catch(err => logger.error('Confirmation email failed:', err.message));
+          sendBookingConfirmationSms(booking, booking.user).catch(err => logger.error('Confirmation SMS failed:', err.message));
           Notification.createForUser(
             booking.user._id,
             'payment_success',
@@ -283,7 +290,6 @@ const confirmDemoPayment = asyncHandler(async (req, res, next) => {
   booking.status = 'confirmed';
   await booking.save();
 
-  sendBookingConfirmationEmail(booking, req.user).catch(() => {});
   Notification.createForUser(
     req.user._id,
     'payment_success',
@@ -306,6 +312,9 @@ const confirmDemoPayment = asyncHandler(async (req, res, next) => {
     path: 'flight',
     populate: [{ path: 'airline' }, { path: 'origin' }, { path: 'destination' }],
   });
+
+  sendBookingConfirmationEmail(booking, req.user).catch(err => logger.error('Confirmation email failed:', err.message));
+  sendBookingConfirmationSms(booking, req.user).catch(err => logger.error('Confirmation SMS failed:', err.message));
 
   return success(res, 200, { booking });
 });
