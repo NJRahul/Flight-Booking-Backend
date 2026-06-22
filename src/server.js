@@ -34,10 +34,13 @@ const allowedOrigins = [
   // dev fallbacks when ports shift
   'http://localhost:5175',
   'http://localhost:5176',
-];
+].map(o => o.replace(/\/$/, '')); // strip trailing slashes for reliable comparison
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    const normalised = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalised)) return cb(null, true);
+    logger.warn(`CORS blocked: ${origin} | allowed: ${allowedOrigins.join(', ')}`);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
