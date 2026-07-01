@@ -7,7 +7,8 @@ const { generateBookingRef } = require('../utils/generateReference');
 const logger = require('../utils/logger');
 const { sendCancellationEmail } = require('../services/emailService');
 const pdfService = require('../services/pdfService');
-const { emitAdminStatsUpdate } = require('../config/socket');
+const { emitAdminStatsUpdate, emitFlightSeatsUpdate } = require('../config/socket');
+const { computeAvailableCounts } = require('./flightController');
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const TAX_RATE = 0.18;
@@ -212,7 +213,21 @@ const createBooking = asyncHandler(async (req, res, next) => {
 
   // Notify admin sockets that stats have changed
   const io = req.app.get('io');
-  if (io) emitAdminStatsUpdate(io, { event: 'booking:new', bookingId: booking._id });
+  if (io) {
+    emitAdminStatsUpdate(io, { event: 'booking:new', bookingId: booking._id });
+
+    // Broadcast updated seat availability to everyone viewing these flight detail pages.
+    // Fire-and-forget — booking is already saved, this is best-effort.
+    computeAvailableCounts(flightId)
+      .then((counts) => emitFlightSeatsUpdate(io, flightId, counts))
+      .catch(() => {});
+
+    if (returnFlightId) {
+      computeAvailableCounts(returnFlightId)
+        .then((counts) => emitFlightSeatsUpdate(io, returnFlightId, counts))
+        .catch(() => {});
+    }
+  }
 
   return success(res, 201, { booking, clientSecret });
 });

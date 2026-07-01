@@ -84,10 +84,19 @@ const emitAdminStatsUpdate = (io, payload = {}) => {
   io.to('admin').emit('admin:stats', { ts: Date.now(), ...payload });
 };
 
+// Broadcast updated seat availability to everyone viewing a flight detail page
+const emitFlightSeatsUpdate = (io, flightId, available) => {
+  io.to(`flight:${flightId}`).emit('flight:seatsUpdate', {
+    flightId: String(flightId),
+    available, // { economy: N, business: N, first: N }
+  });
+};
+
 module.exports = {
   initSocket,
   emitFlightUpdate,
   emitBookingUpdate,
   emitUserNotification,
   emitAdminStatsUpdate,
+  emitFlightSeatsUpdate,
 };

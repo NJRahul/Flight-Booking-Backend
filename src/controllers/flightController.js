@@ -49,7 +49,20 @@ async function generateSeatMap(flightId, seatClass) {
       }
     }
   }
-  return seats;
+
+  const availableCount = seats.filter((s) => !s.isOccupied).length;
+  return { seats, availableCount };
+}
+
+// Returns available seat counts for all 3 classes derived from seat maps (not the stored counter).
+// Used by bookingController after a booking is created to broadcast the update.
+async function computeAvailableCounts(flightId) {
+  const [eco, biz, fst] = await Promise.all([
+    generateSeatMap(flightId, 'economy'),
+    generateSeatMap(flightId, 'business'),
+    generateSeatMap(flightId, 'first'),
+  ]);
+  return { economy: eco.availableCount, business: biz.availableCount, first: fst.availableCount };
 }
 
 const searchFlights = asyncHandler(async (req, res) => {
@@ -118,9 +131,25 @@ const getFlightById = asyncHandler(async (req, res) => {
   Flight.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } }).catch(() => {});
 
   const seatClass = req.query.class || 'economy';
-  const seatMap = await generateSeatMap(req.params.id, seatClass);
 
-  success(res, 200, { flight, seatMap });
+  // Run all three class maps in parallel — single source of truth for both
+  // "seats left" counts and individual seat occupancy.
+  const [ecoMap, bizMap, fstMap] = await Promise.all([
+    generateSeatMap(req.params.id, 'economy'),
+    generateSeatMap(req.params.id, 'business'),
+    generateSeatMap(req.params.id, 'first'),
+  ]);
+
+  // Override stored counters with map-derived counts so they always match the visual map.
+  const flightObj = flight.toObject();
+  flightObj.seats.economy.available = ecoMap.availableCount;
+  flightObj.seats.business.available = bizMap.availableCount;
+  flightObj.seats.first.available = fstMap.availableCount;
+
+  const classMap = { economy: ecoMap, business: bizMap, first: fstMap };
+  const seatMap = classMap[seatClass]?.seats || [];
+
+  success(res, 200, { flight: flightObj, seatMap });
 });
 
 const getSeatMap = asyncHandler(async (req, res) => {
@@ -128,8 +157,8 @@ const getSeatMap = asyncHandler(async (req, res) => {
   if (!flight) return error(res, 404, 'Flight not found');
 
   const seatClass = req.query.class || 'economy';
-  const seatMap = await generateSeatMap(req.params.id, seatClass);
-  success(res, 200, { seatMap });
+  const { seats, availableCount } = await generateSeatMap(req.params.id, seatClass);
+  success(res, 200, { seatMap: seats, availableCount });
 });
 
 const getAirlines = asyncHandler(async (req, res) => {
@@ -137,4 +166,4 @@ const getAirlines = asyncHandler(async (req, res) => {
   success(res, 200, { airlines });
 });
 
-module.exports = { searchFlights, getFlightById, getSeatMap, getAirlines };
+module.exports = { searchFlights, getFlightById, getSeatMap, getAirlines, computeAvailableCounts };
