@@ -52,9 +52,11 @@ const bookingSchema = new mongoose.Schema(
     },
     payment: {
       status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'pending' },
-      method: { type: String, enum: ['card', 'upi', 'netbanking', 'wallet', 'stripe'] },
+      method: { type: String, enum: ['card', 'upi', 'netbanking', 'wallet', 'stripe', 'razorpay', 'demo'] },
       transactionId: { type: String },
       stripePaymentIntentId: { type: String },
+      razorpayOrderId: { type: String },
+      razorpayPaymentId: { type: String },
       paidAt: { type: Date },
       refundAmount: { type: Number },
       refundedAt: { type: Date },
