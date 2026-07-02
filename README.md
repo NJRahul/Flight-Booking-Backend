@@ -285,18 +285,6 @@ After running `npm run seed`, use these accounts to log in:
 
 ---
 
-## Stripe Test Cards
-
-Use these cards in test mode (no real charges):
-
-| Card | Number | Expiry | CVC |
-|---|---|---|---|
-| Visa (success) | `4242 4242 4242 4242` | Any future date | Any 3 digits |
-| Auth required | `4000 0025 0000 3155` | Any future date | Any 3 digits |
-| Declined | `4000 0000 0000 9995` | Any future date | Any 3 digits |
-
----
-
 ## Razorpay Test Payment Details
 
 ### Test API Keys
