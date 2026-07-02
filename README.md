@@ -297,6 +297,50 @@ Use these cards in test mode (no real charges):
 
 ---
 
+## Razorpay Test Payment Details
+
+### Test API Keys
+
+```
+Key ID:     rzp_test_1DP5mmOlF5G5ag
+Key Secret: thisissecret
+```
+
+> Get your own test keys from [dashboard.razorpay.com](https://dashboard.razorpay.com) under **Settings → API Keys**. Use `rzp_test_...` keys for test mode.
+
+### Test Cards
+
+| Card Type | Number | CVV | Expiry |
+|---|---|---|---|
+| Mastercard (Success) | `5267 3181 8797 5449` | Any 3 digits | Any future date |
+| Visa (Failure) | `4000 0000 0000 0002` | Any 3 digits | Any future date |
+
+### Test UPI
+
+| UPI ID | Result |
+|---|---|
+| `success@razorpay` | Payment succeeds |
+| `failure@razorpay` | Payment fails |
+
+### Test Net Banking
+
+Select any bank in the Razorpay modal — no real login required in test mode. The payment auto-completes.
+
+### Test Wallet
+
+Select any wallet (e.g., Freecharge) — auto-completes in test mode without real credentials.
+
+### OTP (if prompted)
+
+| OTP | Result |
+|---|---|
+| `1234` | Payment succeeds |
+| `9999` | Payment fails |
+
+> All Razorpay test payments only work when the integration uses `rzp_test_...` API keys.
+
+---
+
 ## Scripts
 
 ```bash
